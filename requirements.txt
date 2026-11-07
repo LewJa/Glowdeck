@@ -1,0 +1,6 @@
+tinytuya
+tuya-device-sharing-sdk
+mss
+numpy
+pystray
+pillow

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+build/
+dist/
+installer_out/
+*.spec
+*.log
+config.json
+state.json
+.window-profile/

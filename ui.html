@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glowdeck</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101218">
+<style>
+:root{
+  --bg:#101218; --card:#181b23; --card2:#20242f; --line:#2a2f3b;
+  --fg:#eef0f4; --muted:#8a92a3; --accent:#8b6cff; --accent2:#5b8cff;
+  --good:#3ecf8e; --warn:#f5a524; --cur:#8b6cff;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--fg);overflow-x:hidden;overflow-y:auto;
+  font:14px/1.4 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;user-select:none;cursor:default}
+body{opacity:0;transition:opacity .15s}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-thumb{background:#2f3441;border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+body.ready{opacity:1}
+.app{width:340px;padding:18px 18px 14px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:34px;height:34px;border-radius:50%;
+  background:conic-gradient(#ff4d6d,#ffb84d,#f4ff4d,#4dff88,#4dd2ff,#6c7bff,#c44dff,#ff4d6d);
+  -webkit-mask:radial-gradient(circle,transparent 9px,#000 10px);mask:radial-gradient(circle,transparent 9px,#000 10px)}
+h1{font-size:16px;font-weight:650;letter-spacing:.2px}
+.status{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:1px}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.status i.good{background:var(--good);box-shadow:0 0 8px var(--good)}
+.status i.warn{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+
+.switch{width:48px;height:28px;border-radius:99px;background:#343a48;position:relative;transition:background .2s;flex:none}
+.switch span{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+  transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.switch[aria-checked=true]{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.switch[aria-checked=true] span{transform:translateX(20px)}
+
+section{margin-bottom:18px}
+.row{display:flex;align-items:baseline;justify-content:space-between}
+h2{font-size:11px;font-weight:650;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.row h2{margin-bottom:0}
+.row{margin-bottom:9px}
+.val{font-size:12px;color:var(--fg);font-variant-numeric:tabular-nums}
+.controls{transition:opacity .2s}
+.off .controls{opacity:.4;pointer-events:none}
+
+.modes{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.modes button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 2px 9px;
+  display:flex;flex-direction:column;align-items:center;gap:7px;font-size:12px;color:var(--muted);transition:all .15s}
+.modes button:hover{background:var(--card2);color:var(--fg)}
+.modes button.on{color:#fff;border-color:transparent;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 18px -6px var(--accent)}
+.modes svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+.picker{position:relative;height:132px;border-radius:14px;cursor:crosshair;touch-action:none;
+  background:linear-gradient(to bottom,rgba(255,255,255,0),#fff),
+    linear-gradient(to right,#f00 0%,#ff0 16.66%,#0f0 33.33%,#0ff 50%,#00f 66.66%,#f0f 83.33%,#f00 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);transition:filter .2s,opacity .2s}
+.picker.dim{filter:saturate(.55) brightness(.6)}
+.picker.white{background:linear-gradient(to right,#ff9d3c 0%,#ffd39a 32%,#fff3e4 52%,#dbe9ff 78%,#a8c8ff 100%)}
+.modes.n5 button{font-size:11.5px}
+.marker{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+  border:3px solid #fff;background:var(--cur);box-shadow:0 2px 8px rgba(0,0,0,.55);pointer-events:none}
+.picker.dim .marker{opacity:0}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:99px;
+  background:linear-gradient(90deg,#1b1e26,var(--cur));box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-6px;border-radius:50%;
+  background:#fff;border:0;box-shadow:0 1px 6px rgba(0,0,0,.55),0 0 0 4px rgba(255,255,255,.12)}
+
+.chip{font-size:11px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);transition:all .15s}
+.chip:hover{color:var(--fg);background:var(--card2)}
+.chip.on{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.favs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.fav{aspect-ratio:1;border-radius:50%;border:2px solid transparent;position:relative;transition:transform .12s;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.fav:hover{transform:scale(1.1)}
+.fav.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.14)}
+.fav.empty{background:var(--card);border:1.5px dashed #444b5b}
+.favs.edit .fav{animation:wob .5s ease-in-out infinite alternate}
+.favs.edit .fav::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.5)}
+@keyframes wob{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+.hint{font-size:11.5px;color:var(--muted);margin-top:10px;min-height:16px}
+
+footer{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px;margin-top:2px}
+footer button{font-size:12px;color:var(--muted);padding:4px 8px;border-radius:8px}
+footer button:hover{color:#fff;background:var(--card2)}
+
+/* header actions */
+.hdr-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--muted);transition:all .15s}
+.icon-btn:hover{background:var(--card2);color:var(--fg)}
+.icon-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#stxt{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[hidden]{display:none!important}
+
+/* setup + settings */
+.big{font-size:17px;font-weight:650;letter-spacing:.1px;text-transform:none;color:var(--fg);margin-bottom:12px}
+p{color:var(--fg);margin-bottom:10px}
+.center{text-align:center}
+.fine{font-size:11.5px;line-height:1.45;color:var(--muted);margin:10px 0}
+.err{font-size:12.5px;color:#ff7d7d;min-height:0;margin:8px 0}
+.err:empty{display:none}
+input[type=text],input[type=password],select{width:100%;height:42px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--fg);
+  padding:0 14px;font:inherit;user-select:text;cursor:text;transition:border-color .15s}
+input[type=text]:focus,input[type=password]:focus,select:focus{outline:none;border-color:var(--accent)}
+select{appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238a92a3' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+.field{display:block;margin-bottom:11px}
+.field>span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.keyrow{position:relative}
+.keyrow input{padding-right:60px}
+.keyrow .chip{position:absolute;right:8px;top:9px}
+.ok{font-size:12.5px;color:var(--good);margin:8px 0}
+.ok:empty{display:none}
+h2.sec{margin:18px 0 9px}
+.btn{display:block;width:100%;height:42px;border-radius:11px;font-weight:600;margin-top:10px;transition:all .15s}
+.btn.primary{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 18px -8px var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.primary:disabled{opacity:.4;pointer-events:none;box-shadow:none}
+.btn.secondary{background:var(--card);border:1px solid var(--line)}
+.btn.secondary:hover{background:var(--card2)}
+.btn.ghost{color:var(--muted);height:36px}
+.btn.ghost:hover{color:var(--fg)}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;margin-bottom:4px}
+.setrow .fine{margin:2px 0 0}
+
+/* lights */
+.prow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:10px 14px;margin-bottom:18px}
+.prow b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px}
+.prow .fine{margin:1px 0 0}
+.devs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.dchip{display:flex;align-items:center;gap:7px;max-width:100%;padding:7px 12px;border-radius:99px;background:var(--card);
+  border:1px solid var(--line);font-size:12.5px;color:var(--muted);transition:all .15s}
+.dchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.dchip i{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:none}
+.dchip i.good{background:var(--good)}
+.dchip i.warn{background:var(--warn)}
+.dchip:hover{color:var(--fg);background:var(--card2)}
+.dchip.on{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.dchip.on i{box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.dchip.off span{opacity:.55}
+.dchip.add{font-size:15px;line-height:1;padding:7px 13px}
+.qr{display:inline-block;background:#fff;border-radius:14px;padding:6px;margin:4px 0 10px;line-height:0}
+.qr svg{width:232px;height:232px;display:block}
+.steps{margin:0 0 12px 18px;color:var(--muted);font-size:12.5px;line-height:1.45}
+.steps li{margin-bottom:5px}
+.steps b{color:var(--fg);font-weight:600}
+.pick{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:11px 14px;margin-bottom:6px;transition:background .15s}
+.pick:hover{background:var(--card2)}
+.pick .box{width:20px;height:20px;border-radius:6px;border:1.5px solid #555d70;flex:none;display:grid;place-items:center}
+.pick[aria-checked=true] .box{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+.pick[aria-checked=true] .box::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.pick div{min-width:0}
+.pick b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick .fine{margin:1px 0 0}
+.btn.danger{color:#ff8a8a;background:var(--card);border:1px solid #4a2b30}
+.btn.danger:hover{background:#2a1a1e}
+.link{color:var(--accent2);text-decoration:underline;font-size:inherit}
+.setrow b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
+.setrow>div{min-width:0}
+.setrow.dev{margin-bottom:6px}
+input[readonly]{opacity:.6}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>Glowdeck</h1>
+        <div class="status"><i id="dot"></i><span id="stxt">Connecting…</span></div>
+      </div>
+    </div>
+    <div class="hdr-actions">
+      <button class="icon-btn" id="gear" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </header>
+
+  <div id="v-main">
+    <div class="devs" id="devs"></div>
+    <div class="prow">
+      <div><b id="p-name">Light</b><div class="fine" id="p-sub">On</div></div>
+      <button class="switch" id="power" role="switch" aria-checked="true" aria-label="Power"><span></span></button>
+    </div>
+
+    <div class="controls">
+      <section>
+        <h2>Mode</h2>
+        <div class="modes" id="modes">
+          <button data-mode="colour"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 1.6-2.1-.5-1.3.2-2.4 1.6-2.4H17a4 4 0 0 0 4-4c0-5-4-9.5-9-9.5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span>Colour</span></button>
+          <button data-mode="white"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg><span>White</span></button>
+          <button data-mode="screen"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span>Screen</span></button>
+          <button data-mode="top"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M3 8h18" stroke-width="3"/><path d="M8 20h8M12 16v4"/></svg><span>Top</span></button>
+          <button data-mode="bottom"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M3 13h18" stroke-width="3"/><path d="M8 20h8M12 16v4"/></svg><span>Bottom</span></button>
+        </div>
+      </section>
+
+      <section>
+        <div class="row"><h2 id="pick-h">Colour</h2><span class="val" id="pick-v"></span></div>
+        <div class="picker" id="picker"><div class="marker" id="marker"></div></div>
+      </section>
+
+      <section>
+        <div class="row"><h2>Brightness</h2><span class="val" id="bval">80%</span></div>
+        <input type="range" id="bri" min="5" max="100" value="80" aria-label="Brightness">
+      </section>
+
+      <section>
+        <div class="row"><h2>Favourites</h2><button class="chip" id="editfav">Edit</button></div>
+        <div class="favs" id="favs"></div>
+        <p class="hint" id="hint">Tap a colour to use it.</p>
+      </section>
+    </div>
+
+    <footer><button id="alloff">All off</button><button id="quit">Quit</button></footer>
+  </div>
+
+  <!-- sign in with the Tuya app -->
+  <div id="v-login" hidden>
+    <h2 class="big">Sign in with Tuya</h2>
+    <div id="lg-form">
+      <p class="fine" style="margin-top:0">Your lights are found through your Tuya Smart or Smart Life account. Only the lights you pick (and their keys) are kept, on this PC.</p>
+      <ol class="steps">
+        <li>In the app open <b>Me</b>, then the settings gear, <b>Account and Security</b>, <b>User Code</b>.</li>
+        <li>Type that code below.</li>
+        <li>Scan the QR code that appears, using the scan icon in the app (top right of the Home tab).</li>
+      </ol>
+      <label class="field"><span>User code</span><input id="lg-code" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. 7F3K9XQ2"></label>
+      <p class="err" id="lg-err"></p>
+      <button class="btn primary" id="lg-go">Show QR code</button>
+    </div>
+    <div id="lg-wait" class="center" hidden>
+      <div class="qr" id="qr"></div>
+      <p class="fine" id="lg-msg" style="margin-top:0">Waiting for you to scan the code…</p>
+      <button class="btn ghost" id="lg-cancel">Cancel</button>
+    </div>
+    <p class="fine center">Apps branded by the light's seller can't sign in this way.<br><button class="link" id="lg-manual">Add a light with its ID and key</button></p>
+    <button class="btn secondary" id="lg-back" hidden>Back</button>
+    <button class="btn ghost" id="lg-quit" hidden>Quit</button>
+  </div>
+
+  <!-- choose lights from the account -->
+  <div id="v-pick" hidden>
+    <h2 class="big">Choose your lights</h2>
+    <p class="fine" id="pk-sub" style="margin-top:0">Tick the lights you want to control.</p>
+    <div id="pk-list"></div>
+    <p class="fine" id="pk-other"></p>
+    <p class="err" id="pk-err"></p>
+    <button class="btn primary" id="pk-add">Add</button>
+    <button class="btn secondary" id="pk-back">Cancel</button>
+  </div>
+
+  <!-- add / edit one light by hand -->
+  <div id="v-device" hidden>
+    <h2 class="big" id="dv-title">Add a light</h2>
+    <label class="field"><span>Name</span><input id="dv-name" type="text" autocomplete="off" placeholder="Desk strip"></label>
+    <label class="field"><span>Device ID</span><input id="dv-id" type="text" autocomplete="off" spellcheck="false" placeholder="bf0123456789abcdef"></label>
+    <label class="field"><span>Local key</span>
+      <div class="keyrow"><input id="dv-key" type="password" autocomplete="off" spellcheck="false" placeholder="Local key"><button class="chip" id="dv-showkey" type="button">Show</button></div>
+    </label>
+    <label class="field"><span>IP address (optional)</span><input id="dv-ip" type="text" autocomplete="off" spellcheck="false" placeholder="Leave empty to find it automatically"></label>
+    <label class="field"><span>Protocol version</span>
+      <select id="dv-ver"><option value="auto">Auto-detect</option><option value="3.3">3.3</option><option value="3.4">3.4</option><option value="3.5">3.5</option></select>
+    </label>
+    <p class="err" id="dv-err"></p>
+    <p class="ok" id="dv-ok"></p>
+    <button class="btn primary" id="dv-save">Save</button>
+    <button class="btn ghost" id="dv-save-anyway" hidden>Save without testing</button>
+    <button class="btn danger" id="dv-remove" hidden>Remove this light</button>
+    <button class="btn secondary" id="dv-back">Back</button>
+  </div>
+
+  <div id="v-settings" hidden>
+    <h2 class="big">Settings</h2>
+
+    <h2 class="sec" style="margin-top:4px">Lights</h2>
+    <div id="st-devs"></div>
+    <p class="fine" id="st-none">No lights yet.</p>
+    <button class="btn secondary" id="st-add-tuya">Add from my Tuya account</button>
+    <button class="btn secondary" id="st-add-manual">Add a light manually</button>
+
+    <h2 class="sec">App</h2>
+    <div class="setrow">
+      <div><b>Start with Windows</b><div class="fine">Runs quietly in the tray when you sign in.</div></div>
+      <button class="switch" id="sw-auto" role="switch" aria-checked="false" aria-label="Start with Windows"><span></span></button>
+    </div>
+
+    <h2 class="sec">Account</h2>
+    <p class="fine" style="margin-top:0">Log off removes every light, its key and your user code from this PC. Your favourites are kept.</p>
+    <button class="btn danger" id="st-logoff">Log off</button>
+
+    <button class="btn secondary" id="btn-settings-back">Back</button>
+    <p class="fine center" id="ver"></p>
+  </div>
+</div>
+
+<script>/*__QRCODE_JS__*/</script>
+<script>
+"use strict";
+const TOKEN = "__TOKEN__";
+const Q = new URLSearchParams(location.search);
+const APP_MODE = Q.get("app") === "1";
+const $ = s => document.querySelector(s);
+const t0 = Date.now();
+let focused = document.hasFocus();
+let state = null, dragging = false, editing = false, timer = null, pending = {}, pendingId = null, selTime = 0;
+let view = "main", lastH = 0;
+
+const api = (path, body) => fetch(path, {
+  method: body ? "POST" : "GET",
+  headers: {"X-Token": TOKEN, "Content-Type": "application/json"},
+  body: body ? JSON.stringify(body) : undefined
+}).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j; });
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function hsv(h, s, v) {
+  const f = (n, k = (n + h * 6) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+  return [f(5), f(3), f(1)].map(x => Math.round(x * 255));
+}
+const hex = (h, s) => "#" + hsv(h, s, 1).map(x => x.toString(16).padStart(2, "0")).join("");
+const WSTOPS = [[0, [255, 157, 60]], [.32, [255, 211, 154]], [.52, [255, 243, 228]], [.78, [219, 233, 255]], [1, [168, 200, 255]]];
+function whiteHex(t) {
+  let a = WSTOPS[0], b = WSTOPS[WSTOPS.length - 1];
+  for (let i = 1; i < WSTOPS.length; i++) if (t <= WSTOPS[i][0]) { a = WSTOPS[i - 1]; b = WSTOPS[i]; break; }
+  const k = b[0] === a[0] ? 0 : (t - a[0]) / (b[0] - a[0]);
+  return "#" + a[1].map((v, i) => Math.round(v + (b[1][i] - v) * k).toString(16).padStart(2, "0")).join("");
+}
+const kelvin = t => Math.round((2700 + t * 3800) / 100) * 100;     // 2700 K warm ... 6500 K cold
+function effMode(d) {              // what the light really does, given what it can do
+  const m = d.state.mode, c = d.caps || {};
+  if (m === "white" && c.white === false) return "colour";
+  if (m === "colour" && c.colour === false && c.white) return "white";
+  return m;
+}
+const dev = () => (state && state.devices.find(d => d.id === state.selected)) || null;
+const hasDevices = () => !!(state && state.devices.length);
+
+// ---------------------------------------------------------------- sending changes for the selected light
+function send(patch) {
+  const d = dev(); if (!d) return;
+  if (pendingId && pendingId !== d.id) flush();
+  Object.assign(d.state, patch); Object.assign(pending, patch); pendingId = d.id; render();
+  if (!timer) timer = setTimeout(flush, 60);
+}
+function flush() {
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (!pendingId) return;
+  const p = Object.assign({}, pending, {id: pendingId}); pending = {}; pendingId = null;
+  api("/api/state", p).catch(() => {});
+}
+
+// ---------------------------------------------------------------- main view
+function render() {
+  if (!state) return;
+  renderDevs();
+  const d = dev();
+  setStatus(d);
+  if (!d) return;
+  const s = d.state, em = effMode(d), c = d.caps || {};
+  const cur = em === "white" ? whiteHex(s.t) : hex(s.h, s.s);
+  document.documentElement.style.setProperty("--cur", cur);
+  document.body.classList.toggle("off", !s.power);
+  $("#power").setAttribute("aria-checked", s.power);
+  $("#power").setAttribute("aria-label", d.name + " power");
+  $("#p-name").textContent = d.name;
+  $("#p-sub").textContent = s.power ? "On - tap to switch just this light off" : "Off";
+  let shown = 0;
+  document.querySelectorAll("#modes button").forEach(b => {
+    const m = b.dataset.mode;
+    const vis = m === "white" ? c.white === true : m === "colour" ? c.colour !== false : true;
+    b.hidden = !vis; if (vis) shown++;
+    b.classList.toggle("on", m === em);
+  });
+  $("#modes").style.gridTemplateColumns = "repeat(" + shown + ",1fr)";
+  $("#modes").classList.toggle("n5", shown >= 5);
+  const pk = $("#picker"), isW = em === "white";
+  pk.classList.toggle("white", isW);
+  pk.classList.toggle("dim", em !== "colour" && !isW);
+  $("#pick-h").textContent = isW ? "Temperature" : "Colour";
+  $("#pick-v").textContent = isW ? kelvin(s.t) + " K · " + (s.t < .34 ? "warm" : s.t < .67 ? "neutral" : "cold") : "";
+  $("#marker").style.left = ((isW ? s.t : s.h) * 100) + "%";
+  $("#marker").style.top = (isW ? 50 : (1 - s.s) * 100) + "%";
+  const pct = Math.round(s.brightness * 100);
+  if (document.activeElement !== $("#bri") || !dragging) $("#bri").value = pct;
+  $("#bval").textContent = pct + "%";
+  $("#alloff").textContent = state.devices.some(x => x.state.power) ? "All off" : "All on";
+  const favs = $("#favs"); favs.classList.toggle("edit", editing);
+  // only rebuild the swatches when something visible changed (a rebuild mid-click would drop the click)
+  const sig = JSON.stringify([state.favourites, em === "colour" ? [s.h, s.s] : 0]);
+  if (sig !== favs.dataset.sig) {
+    favs.dataset.sig = sig;
+    favs.innerHTML = "";
+    state.favourites.forEach((f, i) => {
+      const b = el("button", "fav" + (f ? "" : " empty"));
+      if (f) {
+        b.style.background = hex(f[0], f[1]);
+        if (em === "colour" && Math.abs(f[0] - s.h) < .004 && Math.abs(f[1] - s.s) < .008) b.classList.add("on");
+      }
+      b.setAttribute("aria-label", "Favourite " + (i + 1));
+      b.onclick = () => favClick(i);
+      b.oncontextmenu = e => { e.preventDefault(); saveFav(i); };
+      favs.appendChild(b);
+    });
+  }
+  $("#editfav").classList.toggle("on", editing);
+  $("#editfav").textContent = editing ? "Done" : "Edit";
+  $("#hint").textContent = editing ? "Tap a slot to save the current colour there."
+                                   : "Tap a colour to use it. Right-click a slot to save.";
+}
+
+function renderDevs() {
+  const box = $("#devs");
+  const sig = JSON.stringify([state.selected, state.devices.map(d => [d.id, d.name, d.online, d.state.power])]);
+  if (sig === box.dataset.sig) return;
+  box.dataset.sig = sig; box.innerHTML = "";
+  state.devices.forEach(d => {
+    const b = el("button", "dchip" + (d.id === state.selected ? " on" : "") + (d.state.power ? "" : " off"));
+    b.appendChild(el("i", d.online === true ? "good" : d.online === false ? "warn" : ""));
+    b.appendChild(el("span", "", d.name));
+    b.title = d.name + " - " + (d.state.power ? d.status : "off");
+    b.onclick = () => selectDevice(d.id);
+    box.appendChild(b);
+  });
+  const add = el("button", "dchip add", "+"); add.title = "Add a light"; add.setAttribute("aria-label", "Add a light");
+  add.onclick = () => showView("login");
+  box.appendChild(add);
+  fitSoon();
+}
+
+function selectDevice(id) {
+  if (id === state.selected) return;
+  flush();
+  state.selected = id; selTime = Date.now(); editing = false;
+  $("#favs").dataset.sig = "";
+  api("/api/state", {select: id}).catch(() => {});
+  render();
+}
+
+function setStatus(d) {
+  const dot = $("#dot");
+  if (!d) { dot.className = ""; $("#stxt").textContent = state && state.devices.length === 0 ? "No lights yet" : ""; return; }
+  dot.className = d.online === true ? "good" : d.online === false ? "warn" : "";
+  $("#stxt").textContent = d.name + (d.status ? " · " + d.status : "");
+}
+
+function favClick(i) {
+  const f = state.favourites[i];
+  if (editing || !f) return saveFav(i);
+  const d = dev(); if (d && d.caps && d.caps.colour === false) return;      // white-only bulb
+  send({h: f[0], s: f[1], mode: "colour"});
+}
+function saveFav(i) {
+  const d = dev(); if (!d) return;
+  if (effMode(d) !== "colour") {
+    $("#hint").textContent = "Favourites save colours - switch to Colour mode first.";
+    setTimeout(() => render(), 2500); return;
+  }
+  const favs = state.favourites.slice(); favs[i] = [d.state.h, d.state.s];
+  state.favourites = favs; $("#favs").dataset.sig = ""; render();
+  api("/api/state", {favourites: favs}).catch(() => {});
+}
+
+$("#power").onclick = () => { const d = dev(); if (d) send({power: !d.state.power}); };
+$("#modes").onclick = e => { const b = e.target.closest("button"); if (b) send({mode: b.dataset.mode}); };
+$("#editfav").onclick = () => { editing = !editing; render(); };
+$("#quit").onclick = quit; $("#lg-quit").onclick = quit;
+function quit() { api("/api/quit", {}).catch(() => {}); setTimeout(() => window.close(), 150); }
+$("#alloff").onclick = () => {
+  if (!state) return;
+  flush();
+  const on = !state.devices.some(x => x.state.power);
+  state.devices.forEach(x => x.state.power = on);
+  render();
+  api("/api/state", {all_power: on}).catch(() => {});
+};
+
+const picker = $("#picker");
+function pick(e) {
+  const r = picker.getBoundingClientRect();
+  const x = Math.min(Math.max(e.clientX - r.left, 0), r.width), y = Math.min(Math.max(e.clientY - r.top, 0), r.height);
+  const d = dev();
+  if (d && effMode(d) === "white") send({t: Math.min(Math.max(x / r.width, 0), 1), mode: "white"});
+  else send({h: Math.min(x / r.width, 0.9999), s: 1 - y / r.height, mode: "colour"});
+}
+picker.addEventListener("pointerdown", e => { dragging = true; picker.setPointerCapture(e.pointerId); pick(e); });
+picker.addEventListener("pointermove", e => { if (dragging) pick(e); });
+picker.addEventListener("pointerup", () => dragging = false);
+picker.addEventListener("pointercancel", () => dragging = false);
+const bri = $("#bri");
+bri.addEventListener("pointerdown", () => dragging = true);
+bri.addEventListener("pointerup", () => dragging = false);
+bri.addEventListener("input", () => send({brightness: bri.value / 100}));
+
+// ---------------------------------------------------------------- window behaviour (only when opened as an app window)
+function closeSelf() { api("/api/closed", {}).catch(() => {}); setTimeout(() => window.close(), 40); }
+if (APP_MODE) {
+  addEventListener("focus", () => focused = true);
+  addEventListener("blur", () => { if (focused && Date.now() - t0 > 800 && view === "main") closeSelf(); });
+  addEventListener("keydown", e => { if (e.key === "Escape" && view === "main") closeSelf(); });
+}
+let fitTimer = null;
+function fitSoon() { clearTimeout(fitTimer); fitTimer = setTimeout(() => { if ($("#app").offsetHeight !== lastH) fit(); }, 30); }
+function fit() {
+  lastH = $("#app").offsetHeight;
+  if (APP_MODE) {
+    try {
+      const dw = outerWidth - innerWidth, dh = outerHeight - innerHeight;
+      const w = 340 + dw, h = Math.min(lastH + dh, screen.availHeight - 24);   // never taller than the screen
+      resizeTo(w, h);
+      moveTo((screen.availLeft || 0) + screen.availWidth - w - 12, (screen.availTop || 0) + screen.availHeight - h - 12);
+    } catch (e) {}
+  }
+  document.body.classList.add("ready");
+}
+
+// ---------------------------------------------------------------- views
+const VIEWS = ["main", "login", "pick", "device", "settings"];
+function showView(v) {
+  if (view === "main" && v !== "main") flush();
+  if (v !== "login") stopLoginTimer();
+  view = v;
+  document.body.dataset.view = v;
+  VIEWS.forEach(n => $("#v-" + n).hidden = n !== v);
+  if (v === "login") enterLogin();
+  if (v === "settings") renderSettings();
+  if (v === "main") render();
+  window.scrollTo(0, 0);
+  fit();
+}
+$("#gear").onclick = () => showView(view === "settings" ? "main" : "settings");
+$("#btn-settings-back").onclick = () => showView("main");
+
+// ---- sign in
+let lastQr = null, loginTimer = null, polling = false;
+function stopLoginTimer() { if (loginTimer) { clearInterval(loginTimer); loginTimer = null; } }
+function resetLoginForm(msg) {
+  stopLoginTimer(); lastQr = null;
+  $("#lg-form").hidden = false; $("#lg-wait").hidden = true;
+  $("#lg-go").disabled = false; $("#lg-go").textContent = "Show QR code";
+  $("#lg-err").textContent = msg || ""; fit();
+}
+async function enterLogin() {
+  $("#lg-back").hidden = !hasDevices();
+  $("#lg-quit").hidden = hasDevices();
+  if (!$("#lg-code").value && state && state.user_code) $("#lg-code").value = state.user_code;
+  if (lastQr) showWait(); else resetLoginForm();
+  try {                                   // a sign-in may already be finished or running (e.g. user went back and forth)
+    const r = await api("/api/login/poll");
+    if (view !== "login") return;
+    if (r.status === "ok") openPick(r.devices);
+    else if (r.status === "pending" && lastQr) showWait();
+  } catch (e) {}
+}
+function showWait() {
+  if (typeof window.qrSvg !== "function") { resetLoginForm("The QR component is missing from this build."); return; }
+  $("#qr").innerHTML = window.qrSvg(lastQr, {scale: 6, margin: 2});
+  $("#lg-form").hidden = true; $("#lg-wait").hidden = false;
+  $("#lg-msg").textContent = "Waiting for you to scan the code…";
+  stopLoginTimer(); loginTimer = setInterval(pollLogin, 2000); fit();
+}
+async function startLogin() {
+  const code = $("#lg-code").value.trim();
+  $("#lg-err").textContent = "";
+  if (!code) { $("#lg-err").textContent = "Type your user code first."; return; }
+  $("#lg-go").disabled = true; $("#lg-go").textContent = "Contacting Tuya…";
+  try {
+    const r = await api("/api/login/start", {user_code: code});
+    lastQr = r.qr; showWait();
+  } catch (e) { resetLoginForm(e.message); }
+}
+async function pollLogin() {
+  if (polling || view !== "login") return;
+  polling = true;
+  try {
+    const r = await api("/api/login/poll");
+    if (view !== "login") return;
+    if (r.status === "ok") { stopLoginTimer(); openPick(r.devices); }
+    else if (r.status === "expired" || r.status === "none") resetLoginForm("The QR code expired. Try again.");
+  } catch (e) { resetLoginForm(e.message); }
+  finally { polling = false; }
+}
+$("#lg-go").onclick = startLogin;
+$("#lg-code").addEventListener("keydown", e => { if (e.key === "Enter") startLogin(); });
+$("#lg-cancel").onclick = () => resetLoginForm();
+$("#lg-back").onclick = () => showView("settings");
+$("#lg-manual").onclick = () => openDevice(null);
+
+// ---- choose lights
+let pickList = [], pickSel = new Set();
+function openPick(list) {
+  pickList = list.filter(d => d.light);
+  const others = list.length - pickList.length;
+  pickSel = new Set(pickList.filter(d => d.added).map(d => d.id));
+  if (!pickSel.size) pickList.forEach(d => pickSel.add(d.id));
+  const box = $("#pk-list"); box.innerHTML = "";
+  pickList.forEach(d => {
+    const b = el("button", "pick"); b.setAttribute("role", "checkbox");
+    b.setAttribute("aria-checked", pickSel.has(d.id));
+    b.appendChild(el("span", "box"));
+    const t = el("div"); t.appendChild(el("b", "", d.name));
+    t.appendChild(el("div", "fine", [d.product, d.online === true ? "online" : d.online === false ? "offline" : ""].filter(Boolean).join(" · ") || "Light"));
+    b.appendChild(t);
+    b.onclick = () => {
+      if (pickSel.has(d.id)) pickSel.delete(d.id); else pickSel.add(d.id);
+      b.setAttribute("aria-checked", pickSel.has(d.id)); $("#pk-err").textContent = "";
+    };
+    box.appendChild(b);
+  });
+  $("#pk-sub").textContent = pickList.length ? "Tick the lights you want to control." : "No lights were found in this account.";
+  $("#pk-other").textContent = others ? others + " other device" + (others > 1 ? "s" : "") + " in your account (not lights) are hidden." : "";
+  $("#pk-err").textContent = ""; $("#pk-add").disabled = !pickList.length;
+  $("#pk-back").textContent = hasDevices() ? "Cancel" : "Back";
+  showView("pick");
+}
+$("#pk-back").onclick = () => showView(hasDevices() ? "settings" : "login");
+$("#pk-add").onclick = async () => {
+  if (!pickSel.size) { $("#pk-err").textContent = "Pick at least one light."; return; }
+  const btn = $("#pk-add"); btn.disabled = true; btn.textContent = "Adding…";
+  try {
+    await api("/api/login/add", {ids: [...pickSel]});
+    for (const d of pickList) if (d.added && !pickSel.has(d.id)) await api("/api/device/remove", {id: d.id});
+    await poll(false);
+    showView("main");
+  } catch (e) { $("#pk-err").textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = "Add"; }
+};
+
+// ---- add / edit one light
+let editId = null, devFirst = false, confirmRemove = null;
+function openDevice(id) {
+  editId = id; devFirst = !hasDevices();
+  const d = id && state.devices.find(x => x.id === id);
+  $("#dv-title").textContent = id ? "Edit light" : "Add a light";
+  $("#dv-name").value = d ? d.name : "";
+  $("#dv-id").value = d ? d.id : ""; $("#dv-id").readOnly = !!id;
+  $("#dv-key").value = ""; $("#dv-key").type = "password"; $("#dv-showkey").textContent = "Show";
+  $("#dv-key").placeholder = id ? "Saved - leave blank to keep it" : "Local key";
+  $("#dv-ip").value = d ? d.ip : ""; $("#dv-ver").value = d ? String(d.version) : "auto";
+  $("#dv-err").textContent = ""; $("#dv-ok").textContent = "";
+  $("#dv-remove").hidden = !id; $("#dv-remove").textContent = "Remove this light";
+  ipChanged(); showView("device");
+}
+function ipChanged() {
+  const has = $("#dv-ip").value.trim() !== "";
+  $("#dv-save").textContent = has ? "Test and save" : "Save";
+  $("#dv-save-anyway").hidden = !has;
+}
+$("#dv-ip").addEventListener("input", ipChanged);
+async function saveDevice(test) {
+  const btn = test ? $("#dv-save") : $("#dv-save-anyway"), label = btn.textContent;
+  $("#dv-err").textContent = ""; $("#dv-ok").textContent = "";
+  btn.disabled = true; btn.textContent = test && $("#dv-ip").value.trim() ? "Testing the connection…" : "Saving…";
+  try {
+    const body = {device_id: $("#dv-id").value, name: $("#dv-name").value, local_key: $("#dv-key").value,
+                  ip: $("#dv-ip").value, version: $("#dv-ver").value, test};
+    if (editId) body.original = editId;
+    const r = await api("/api/device", body);
+    $("#dv-ok").textContent = (r.version && test ? "Connected (protocol " + r.version + "). " : "") + "Saved.";
+    $("#dv-key").value = "";
+    await poll(false);
+    setTimeout(() => { if (view === "device") showView(devFirst ? "main" : "settings"); }, 900);
+  } catch (e) { $("#dv-err").textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = label; fit(); }
+}
+$("#dv-save").onclick = () => saveDevice(true);
+$("#dv-save-anyway").onclick = () => saveDevice(false);
+$("#dv-showkey").onclick = () => {
+  const k = $("#dv-key"), show = k.type === "password";
+  k.type = show ? "text" : "password"; $("#dv-showkey").textContent = show ? "Hide" : "Show";
+};
+$("#dv-back").onclick = () => showView(hasDevices() ? "settings" : "login");
+$("#dv-remove").onclick = async () => {
+  const b = $("#dv-remove");
+  if (confirmRemove !== editId) {
+    confirmRemove = editId; b.textContent = "Tap again to remove";
+    setTimeout(() => { if (confirmRemove === editId) { confirmRemove = null; b.textContent = "Remove this light"; } }, 3000);
+    return;
+  }
+  confirmRemove = null;
+  try { await api("/api/device/remove", {id: editId}); await poll(false); showView("settings"); }
+  catch (e) { $("#dv-err").textContent = e.message; }
+};
+
+// ---- settings
+let logoffArmed = false;
+function renderSettings() {
+  $("#sw-auto").setAttribute("aria-checked", !!(state && state.autostart));
+  $("#ver").textContent = state && state.version ? "Version " + state.version : "";
+  const box = $("#st-devs"); box.innerHTML = "";
+  const list = state ? state.devices : [];
+  $("#st-none").hidden = list.length > 0;
+  list.forEach(d => {
+    const r = el("div", "setrow dev"), t = el("div");
+    t.appendChild(el("b", "", d.name));
+    t.appendChild(el("div", "fine", (d.ip ? d.ip : "address found automatically") + (typeof d.version === "number" ? " · protocol " + d.version : "")));
+    r.appendChild(t);
+    const e = el("button", "chip", "Edit"); e.onclick = () => openDevice(d.id);
+    r.appendChild(e); box.appendChild(r);
+  });
+  $("#st-logoff").hidden = !(list.length || (state && state.user_code));
+  logoffArmed = false; $("#st-logoff").textContent = "Log off";
+  fitSoon();
+}
+$("#st-add-tuya").onclick = () => showView("login");
+$("#st-add-manual").onclick = () => openDevice(null);
+$("#sw-auto").onclick = async () => {
+  const want = $("#sw-auto").getAttribute("aria-checked") !== "true";
+  try { const r = await api("/api/settings", {autostart: want}); state.autostart = r.autostart; } catch (e) {}
+  $("#sw-auto").setAttribute("aria-checked", !!state.autostart);
+};
+$("#st-logoff").onclick = async () => {
+  const b = $("#st-logoff");
+  if (!logoffArmed) {
+    logoffArmed = true; b.textContent = "Tap again to log off";
+    setTimeout(() => { if (logoffArmed) { logoffArmed = false; b.textContent = "Log off"; } }, 3500);
+    return;
+  }
+  logoffArmed = false; b.disabled = true;
+  try {
+    await api("/api/logoff", {});
+    lastQr = null; $("#lg-code").value = "";
+    await poll(false); showView("login");
+  } catch (e) {}
+  b.disabled = false;
+};
+
+// ---------------------------------------------------------------- polling
+async function poll(first) {
+  try {
+    const r = await api("/api/state");
+    if (!dragging && !timer) {
+      if (Date.now() - selTime < 1500 && state && r.devices.some(d => d.id === state.selected)) r.selected = state.selected;
+      state = r; render();
+      if (view === "settings") renderSettingsIfChanged();
+    } else if (!state) state = r;
+    if (view === "main" && !state.devices.length && !state.demo) showView("login");
+  } catch (e) {
+    $("#dot").className = "warn"; $("#stxt").textContent = "App is not running";
+  }
+  if (first) fit();
+}
+let setSig = "";
+function renderSettingsIfChanged() {
+  const sig = JSON.stringify([state.devices.map(d => [d.id, d.name, d.ip, d.version]), state.autostart, state.user_code]);
+  if (sig !== setSig) { setSig = sig; renderSettings(); }
+}
+poll(true);
+setInterval(() => poll(false), 1500);
+</script>
+</body>
+</html>
