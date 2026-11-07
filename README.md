@@ -1,24 +1,22 @@
 # Glowdeck - tray app for Tuya lights
 
+**English** | [Nederlands](README.nl.md) | [Deutsch](README.de.md) | [Français](README.fr.md) | [Polski](README.pl.md) | [Čeština](README.cs.md) | [Italiano](README.it.md) | [Español](README.es.md) | [Slovenčina](README.sk.md) | [Português](README.pt.md) | [Română](README.ro.md) | [Hrvatski](README.hr.md)
+
 Controls Tuya LED strips and bulbs over your LAN, without the vendor apps, and reconnects by itself.
 Sign in once with the Tuya Smart / Smart Life app (QR code), pick your lights, and give each one its own job:
 a steady colour, or screen sync of the whole screen, the top edge or the bottom edge.
+
+## Tested with
+
+Tested on the Battletron monitor LED strip sold by Action (Tuya-based, local protocol 3.5). Other Tuya-based strips and
+bulbs should work too, but there is no guarantee. Reports are welcome in the repository's Issues.
 
 ## Install (Windows)
 
 Download `Glowdeck-Setup.exe` from the **Releases** page of this repository.
 
-
 Run `Glowdeck-Setup.exe` (per-user, no admin needed, Python is bundled; optional "Start with Windows").
 Windows SmartScreen may warn because the installer is unsigned: More info -> Run anyway.
-
-### Building the installer
-Share `installer_out\Glowdeck-Setup.exe` - NOT the `build\` or `dist\` folders (the exe in `build\` is an
-unfinished stub and fails with "Failed to load Python DLL").
-
-- Easiest: push this folder to GitHub and run the "Build installer" Action; download the artifact.
-- Or on your PC: install Python 3.10+ (tick "Add to PATH") and Inno Setup 6, then run `build.bat`.
-- From source: `pip install -r requirements.txt`, then `pythonw glowdeck.py`.
 
 ## First start
 
@@ -61,7 +59,7 @@ Flags: `--demo` (three fake lights), `--hidden` (start in the tray), `--no-tray`
 ## Disclaimer
 
 Glowdeck is an independent, unofficial project. It is not affiliated with, endorsed by or sponsored by Tuya, Smart Life,
-or any light manufacturer or seller. Product and company names belong to their owners. Everything runs on your PC and
+or any light manufacturer or seller. Battletron, Action and other product or company names belong to their owners. Everything runs on your PC and
 talks to your lights over your local network; the only internet use is the optional Tuya sign-in. Use at your own risk
 (see `LICENSE`).
 
